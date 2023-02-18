@@ -6,10 +6,11 @@
 #include <string.h>
 
 static bool dir_add_sub(struct directory *dirnode, struct node *sub) {
+  int i = 0;
   if (!dirnode || !sub) {
     return false;
   }
-  for (int i = 0; i < dirnode->size; i++) {
+  for (i = 0; i < dirnode->size; i++) {
     if (strcmp(dirnode->subordinates[i]->name, sub->name) == 0) {
       return false;
     }
@@ -63,13 +64,14 @@ void dir_release(struct directory *dir) {
 
 struct node *dir_find_node(const struct directory *dir, const char *name) {
   /* YOUR CODE HERE */
+  int i = 0;
   if (!dir || !name) {
     return NULL;
   }
   if (dir->size == 0) {
     return NULL;
   }
-  for (int i = 0; i < dir->size; i++) {
+  for (i = 0; i < dir->size; i++) {
     if (strcmp(dir->subordinates[i]->name, name) == 0) {
       return dir->subordinates[i];
     }
@@ -79,19 +81,23 @@ struct node *dir_find_node(const struct directory *dir, const char *name) {
 
 bool dir_add_file(struct directory *dir, int type, char *name) {
   /* YOUR CODE HERE */
-  if (!dir || !name) {
-    return false;
-  }
-  if (dir_find_node(dir, name)) {
-    return false;
-  }
   struct file *file = file_new(type, name);
+  struct node *node = node_new(false, name, file);
   if (!file) {
     file_release(file);
     return false;
   }
-  struct node *node = node_new(false, name, file);
   if (!node) {
+    node_release(node);
+    return false;
+  }
+  if (!dir || !name) {
+    file_release(file);
+    node_release(node);
+    return false;
+  }
+  if (dir_find_node(dir, name)) {
+    file_release(file);
     node_release(node);
     return false;
   }
@@ -104,19 +110,23 @@ bool dir_add_file(struct directory *dir, int type, char *name) {
 
 bool dir_add_subdir(struct directory *dir, char *name) {
   /* YOUR CODE HERE */
-  if (!dir || !name) {
-    return false;
-  }
-  if (dir_find_node(dir, name)) {
-    return false;
-  }
   struct directory *subdir = dir_new(name);
+  struct node *node = node_new(true, name, subdir);
   if (!subdir) {
     dir_release(subdir);
     return false;
   }
-  struct node *node = node_new(true, name, subdir);
   if (!node) {
+    node_release(node);
+    return false;
+  }
+  if (!dir || !name) {
+    dir_release(subdir);
+    node_release(node);
+    return false;
+  }
+  if (dir_find_node(dir, name)) {
+    dir_release(subdir);
     node_release(node);
     return false;
   }
@@ -129,16 +139,18 @@ bool dir_add_subdir(struct directory *dir, char *name) {
 
 bool dir_delete(struct directory *dir, const char *name) {
   /* YOUR CODE HERE */
+  int i = 0;
+  int j = 0;
   if (!dir || !name) {
     return false;
   }
   if (dir->size == 0) {
     return false;
   }
-  for (int i = 0; i < dir->size; i++) {
+  for (i = 0; i < dir->size; i++) {
     if (strcmp(dir->subordinates[i]->name, name) == 0) {
       node_release(dir->subordinates[i]);
-      for (int j = i; j < dir->size - 1; j++) {
+      for (j = i; j < dir->size - 1; j++) {
         dir->subordinates[j] = dir->subordinates[j + 1];
       }
       dir->size--;
