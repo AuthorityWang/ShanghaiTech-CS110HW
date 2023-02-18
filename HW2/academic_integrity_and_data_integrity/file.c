@@ -39,12 +39,31 @@ void file_release(struct file *file) {
 
 bool file_write(struct file *file, int offset, int bytes, const char *buf) {
   /* YOUR CODE HERE */
-  printf("NOT IMPLEMENTED\n");
-  return false;
+  if (offset < 0) {
+    return false;
+  }
+  if (!file || !buf) {
+    return false;
+  }
+  if (offset + bytes > file->size) {
+    file->data = realloc(file->data, offset + bytes);
+    file->size = offset + bytes;
+  }
+  memcpy(file->data + offset, buf, bytes);
+  return true;
 }
 
 bool file_read(const struct file *file, int offset, int bytes, char *buf) {
   /* YOUR CODE HERE */
-  printf("NOT IMPLEMENTED\n");
-  return false;
+  if (offset < 0) {
+    return false;
+  }
+  if (offset + bytes > file->size) {
+    return false;
+  }
+  if (!file || !buf) {
+    return false;
+  }
+  memcpy(buf, file->data + offset, bytes);
+  return true;
 }
