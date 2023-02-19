@@ -39,31 +39,37 @@ void file_release(struct file *file) {
 
 bool file_write(struct file *file, int offset, int bytes, const char *buf) {
   /* YOUR CODE HERE */
+  /* firstly judge if there is special cases */
   if (offset < 0) {
     return false;
   }
   if (!file || !buf) {
     return false;
   }
+  /* if bigger, then realloc memory to store the data */
   if (offset + bytes > file->size) {
     file->data = realloc(file->data, offset + bytes);
     file->size = offset + bytes;
   }
+  /* after realloc, copy data to that */
   memcpy(file->data + offset, buf, bytes);
   return true;
 }
 
 bool file_read(const struct file *file, int offset, int bytes, char *buf) {
   /* YOUR CODE HERE */
+  /* firstly judge the special case */
   if (offset < 0) {
     return false;
   }
   if (offset + bytes > file->size) {
     return false;
   }
+  /* deal with null ptr*/
   if (!file || !buf) {
     return false;
   }
+  /* copy the previous data to memory */
   memcpy(buf, file->data + offset, bytes);
   return true;
 }
