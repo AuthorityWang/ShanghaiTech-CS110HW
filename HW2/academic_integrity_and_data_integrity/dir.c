@@ -71,11 +71,8 @@ void dir_release(struct directory *dir) {
 
 struct node *dir_find_node(const struct directory *dir, const char *name) {
   /* YOUR CODE HERE */
-  /* check the null ptr*/
+  /* deal with null ptr */
   if (!dir || !name) {
-    return NULL;
-  }
-  if (dir->size == 0) {
     return NULL;
   }
   /* travseral the subordinates and find the name */
@@ -84,7 +81,7 @@ struct node *dir_find_node(const struct directory *dir, const char *name) {
       return dir->subordinates[i];
     }
   }
-  /* return NULL if no same name find */
+  /* default return NULL */
   return NULL;
 }
 
@@ -131,14 +128,12 @@ bool dir_delete(struct directory *dir, const char *name) {
   if (!dir || !name) {
     return false;
   }
-  if (dir->size == 0) {
-    return false;
-  }
   /* travseral the subordinates and find the name */
   for (int i = 0; i < dir->size; i++) {
     if (strcmp(dir->subordinates[i]->name, name) == 0) {
+      /* delete the node */
       node_release(dir->subordinates[i]);
-      /* move the subordinates */
+      /* move the last node to the deleted node */
       for (int j = i; j < dir->size - 1; j++) {
         dir->subordinates[j] = dir->subordinates[j + 1];
       }
@@ -146,7 +141,7 @@ bool dir_delete(struct directory *dir, const char *name) {
       dir->size--;
       return true;
     }
-    /* default return false */
   }
+  /* default return false */
   return false;
 }
