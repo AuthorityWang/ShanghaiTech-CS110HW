@@ -24,7 +24,7 @@ all: $(obj_files) $(static_obj_files) $(dynamic_obj_files)
 	$(CC) $(CFLAGS) -c $< -o $@
 # compile for dynamic object files
 %.o-dynamic : %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -fPIC -c $< -o $@
 
 clean:
 	rm -f $(obj_files)
@@ -34,11 +34,11 @@ clean:
 
 # the statically linked library (or archive library)
 $(static_lib): $(static_obj_files)
-	echo "TODO $@"
+	ar rcs $@ $^
 
 # the dynamically linked library (or shared object)
 $(dynamic_lib): $(dynamic_obj_files)
-	echo "TODO $@"
+	$(CC) -shared -o $@ $^
 
 # the executable
 test.out:         main.c $(test_src) $(obj_files)
@@ -47,4 +47,3 @@ test.static.out:  main.c $(test_src) $(dynamic_obj_files) $(static_lib)
 	$(CC) $(CFLAGS) $^ -o $@
 test.dynamic.out: main.c $(test_src) $(static_obj_files)  $(dynamic_lib)
 	$(CC) $(CFLAGS) $^ -o $@
-

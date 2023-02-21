@@ -115,6 +115,7 @@ bool dir_add_subdir(struct directory *dir, char *name) {
   }
   /* init subdir and node*/
   struct directory *subdir = dir_new(name);
+  subdir->parent = dir;
   struct node *node = node_new(true, name, subdir);
   /* deal with possible fail case */
   dir_add_sub(dir, node);
