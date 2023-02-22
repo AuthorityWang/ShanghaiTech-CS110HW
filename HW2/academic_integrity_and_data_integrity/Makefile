@@ -1,7 +1,7 @@
 # see <https://makefiletutorial.com/> for a comprehensive & comprehendible tutorial on GNU make
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -g
+CFLAGS = -Wall -Wextra -Werror -Wpedantic
 
 test_src = tester/file_tester.c tester/dir_tester.c tester/explorer_tester.c
 
@@ -24,7 +24,7 @@ all: $(obj_files) $(static_obj_files) $(dynamic_obj_files)
 	$(CC) $(CFLAGS) -c $< -o $@
 # compile for dynamic object files
 %.o-dynamic : %.c
-	$(CC) $(CFLAGS) -fPIC -c $< -o $@
+	$(CC) $(CFLAGS) -fPIC -shared -c $< -o $@
 
 clean:
 	rm -f $(obj_files)
@@ -38,12 +38,12 @@ $(static_lib): $(static_obj_files)
 
 # the dynamically linked library (or shared object)
 $(dynamic_lib): $(dynamic_obj_files)
-	$(CC) -shared -o $@ $^
+	$(CC) -fPIC -shared -o $@ $^
 
 # the executable
 test.out:         main.c $(test_src) $(obj_files)
 	$(CC) $(CFLAGS) $^ -o $@
 test.static.out:  main.c $(test_src) $(dynamic_obj_files) $(static_lib)
-	$(CC) $(CFLAGS) $^ -o $@
-test.dynamic.out: main.c $(test_src) $(static_obj_files)  $(dynamic_lib)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ -static -L. -lexplorer
+test.dynamic.out: main.c $(test_src) $(dynamic_lib)
+	$(CC) $(CFLAGS) $^ -o $@ -Wl,-rpath=.
