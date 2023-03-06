@@ -1,38 +1,23 @@
-// write a program that find the length of the longest palindromic substring of a given string
-// for example, the longest palindromic substring of "abbsdcds" is "sdcds" so output 5
-// time complexity: O(n^2)
-#include <iostream>
+//中点扩散算法
+#include<bits/stdc++.h>
 #include <string>
+#include <iostream>
 using namespace std;
-
-// from each index, expand to both sides to find the longest palindromic substring
-int main() {
-    string s;
-    cin >> s;
-    int n = s.length();
-    int maxLen = 0;
-    // consider the length is odd and even
-    for (int i = 0; i < n; i++) {
-        int len = 1;
-        // odd
-        for (int j = 1; i - j >= 0 && i + j < n; j++) {
-            if (s[i - j] == s[i + j]) {
-                len += 2;
-            } else {
-                break;
-            }
-        }
-        maxLen = max(maxLen, len);
-        // even
-        len = 0;
-        for (int j = 0; i - j >= 0 && i + j + 1 < n; j++) {
-            if (s[i - j] == s[i + j + 1]) {
-                len += 2;
-            } else {
-                break;
-            }
-        }
-        maxLen = max(maxLen, len);
+int main()
+{
+    std::string str;
+    std::cin >> str;
+    int res=0;
+    int n = str.length();
+    for(int i=0;i<n;i++)
+    {
+        int l=i-1,r=i+1;//判断奇数长度回文串
+        while(l>=0 && r<n && str[l]==str[r]) l--,r++;
+        res=max(res,r-l-1);
+        l=i,r=i+1;//判断偶数长度回文串
+        while(l>=0 && r<n && str[l]==str[r]) l--,r++;
+        res=max(res,r-l-1);
     }
-    cout << maxLen << endl;
+    cout<<res<<endl;
+    return 0;
 }

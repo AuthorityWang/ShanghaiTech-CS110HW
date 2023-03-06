@@ -20,83 +20,85 @@ strlen:
 strlenend:
     # t1 is the length of string n
     mv t1 t0
-    # t2 is the maxlen
+    # t2 is the res
     li t2 0
     # use t3 for loop i
     li t3 0
 loop:
     bgt t3 t1 loopend
-    # t4 is current length
-    li t4 1
-    # t5 for loop j
-    li t5 1
+    # t4 is left index
+    addi t4 t3 -1
+    # t5 is right index
+    addi t5 t3 1
     # consider odd length
 loop1:
-    blt t3 t5 loop1end
-    add s1 t3 t5
-    bgt s1 t1 loop1end
-    # s2 is the left index
-    sub s2 t3 t5
-    # s3 is the right index
-    add s3 t3 t5
-    # load char to s2
-    add s2 a0 s2
+    blt t4 zero loop1end
+    bgt t5 t1 loop1end
+    # compare the left and right char
+    # s1 is the left char
+    add s1 a0 t4
+    lb s1 0(s1)
+    # s2 is the right char
+    add s2 a0 t5
     lb s2 0(s2)
-    # load char to s3
-    add s3 a0 s3
-    lb s3 0(s3)
     # check if they are equal
-    bne s2 s3 loop1end
-    # add 2 to t4
-    addi t4 t4 2
-    # add 1 to t5
+    bne s1 s2 loop1end
+    # l--
+    addi t4 t4 -1
+    # r++
     addi t5 t5 1
     # jump to loop1
-    j loop1
+    jal x0 loop1
 loop1end:
-    # get the max length between t4 and t2
+    # get the max length between res and r-l-1
 max1:
+    # t4 is r-l-1
+    sub t4 t5 t4
+    addi t4 t4 -1
+    # t2 is res
     bge t2 t4 max1end
     mv t2 t4
 max1end:
-    # consider even length
-    # let t4 be 0
-    li t4 0
-    # t5 for loop j
-    li t5 0
-    # consider odd length
+    # let l = i
+    mv t4 t3
+    # let r = i+1
+    addi t5 t3 1
 loop2:
-    blt t3 t5 loop2end
-    add s1 t3 t5
-    bgt s1 t1 loop2end
-    # s2 is the left index
-    sub s2 t3 t5
-    # s3 is the right index
-    add s3 t3 t5
-    addi s3 s3 1
-    # load char to s2
-    add s2 a0 s2
+    blt t4 x0 loop2end
+    bgt t5 t1 loop2end
+    # compare the left and right char
+    # s1 is the left char
+    add s1 a0 t4
+    lb s1 0(s1)
+    # s2 is the right char
+    add s2 a0 t5
     lb s2 0(s2)
-    # load char to s3
-    add s3 a0 s3
-    lb s3 0(s3)
     # check if they are equal
-    bne s2 s3 loop2end
-    # add 2 to t4
-    addi t4 t4 2
-    # add 1 to t5
+    bne s1 s2 loop2end
+    # l--
+    addi t4 t4 -1
+    # r++
     addi t5 t5 1
     # jump to loop2
-    j loop2
+    jal x0 loop2
 loop2end:
     # get the max length between t4 and t2
 max2:
+    # t4 is r-l-1
+    sub t4 t5 t4
+    addi t4 t4 -1
+    # t2 is res
     bge t2 t4 max2end
     mv t2 t4
 max2end:
-    # add 1 to t3
+    # let l = i
+    mv t4 t3
+    # let r = i+1
+    addi t5 t3 1
+    # i++
     addi t3 t3 1
-    j loop
+    # jump to loop
+    jal x0 loop
 loopend:
     # t2 is the maxlen
     mv a0 t2

@@ -1,4 +1,4 @@
 .data
 .globl str
 str:
-        .string "123456"
+        .string "2332"
