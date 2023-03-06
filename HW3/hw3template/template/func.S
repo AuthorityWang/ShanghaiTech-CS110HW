@@ -35,14 +35,14 @@ loop1:
     blt t4 zero loop1end
     bgt t5 t1 loop1end
     # compare the left and right char
-    # s1 is the left char
-    add s1 a0 t4
-    lb s1 0(s1)
-    # s2 is the right char
-    add s2 a0 t5
-    lb s2 0(s2)
+    # a2 is the left char
+    add a2 a0 t4
+    lb a2 0(a2)
+    # a3 is the right char
+    add a3 a0 t5
+    lb a3 0(a3)
     # check if they are equal
-    bne s1 s2 loop1end
+    bne a2 a3 loop1end
     # l--
     addi t4 t4 -1
     # r++
@@ -67,14 +67,14 @@ loop2:
     blt t4 x0 loop2end
     bgt t5 t1 loop2end
     # compare the left and right char
-    # s1 is the left char
-    add s1 a0 t4
-    lb s1 0(s1)
-    # s2 is the right char
-    add s2 a0 t5
-    lb s2 0(s2)
+    # a2 is the left char
+    add a2 a0 t4
+    lb a2 0(a2)
+    # a3 is the right char
+    add a3 a0 t5
+    lb a3 0(a3)
     # check if they are equal
-    bne s1 s2 loop2end
+    bne a2 a3 loop2end
     # l--
     addi t4 t4 -1
     # r++
