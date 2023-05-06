@@ -41,20 +41,48 @@ static void *threadpool_thread(void *threadpool) {
             assert(pthread_cond_wait(&(pool->notify), &(pool->pool_lock)) == 0);
         }
 
+        // If there are still remaining tasks in the ringbuffer:
+        // If sync == true when the threadpool was created, wait until all tasks are finished.
+        // Else, abort all waiting tasks immediately and return as soon as the threadpool finish its running tasks.
         /* 4. If shutdown */
         if (pool->shutdown) {
             // TODO: sync?
-            pthread_exit(NULL);
+            if (pool->sync) {
+                // detect if there are remaining tasks
+                while (!ringbuffer_is_empty(pool->task_list)) {
+                    // new task
+                    threadpool_task_t task;
+                    // pop the task
+                    ringbuffer_pop(pool->task_list, &task);
+                    // run the task
+                    task.func(task.args);
+                }
+            } else {
+                // abort all waiting tasks immediately and return as soon as the threadpool finish its running tasks.
+                while (!ringbuffer_is_empty(pool->task_list)) {
+                    // new task
+                    threadpool_task_t task;
+                    // pop the task
+                    ringbuffer_pop(pool->task_list, &task);
+                }
+            }
+            // unlock
+            lock_release(pool);
+            // return
+            return NULL;
         }
 
         /* 5. Fetch next task */
         // TODO: fetch next task
+        threadpool_task_t task;
+        ringbuffer_pop(pool->task_list, &task);
 
         /* 6. Unlock */
         assert(lock_release(pool));
 
         /* 7. Get to work */
         // TODO: run next task
+        task.func(task.args);
     }
 }
 
@@ -108,7 +136,14 @@ threadpool_t *threadpool_create(size_t thread_count, size_t queue_size, bool syn
     for (size_t i = 0; i < thread_count; i++, pool->thread_count = i) {
         // TODO: pthread_create may fail ... but when?
         // RTFM!
-        pthread_create(&(pool->thread_list[i]), NULL, threadpool_thread, (void *) pool);
+        // if pthread_create fails, it will return a non-zero value
+        if (pthread_create(&(pool->thread_list[i]), NULL, threadpool_thread, (void *) pool) != 0) {
+            // deallocate all
+            deallocate_all(pool);
+            // return
+            return NULL;
+        }
+        // ends here
     }
 
     return pool;
@@ -132,6 +167,18 @@ bool threadpool_add_task(threadpool_t *pool, void (*func)(void *), void *args) {
 
     /* 3. Add a task to ringbuffer */
     // TODO: implement
+    // new task
+    threadpool_task_t task;
+    // set the task
+    task.func = func;
+    task.args = args;
+    // push the task
+    if (!ringbuffer_push(pool->task_list, task)) {
+        // release lock
+        lock_release(pool);
+        // return
+        return false;
+    }
 
     /* 4. Wake up a random available worker */
     if (pthread_cond_signal(&(pool->notify)) != 0) {
@@ -173,8 +220,19 @@ bool threadpool_destroy(threadpool_t *pool) {
 
     /* 6. Wait for all threads terminate */
     // TODO: join all worker threads
+    // loop through all threads
+    for (size_t i = 0; i < pool->thread_count; i++) {
+        // join
+        if (pthread_join(pool->thread_list[i], NULL) != 0) {
+            // return
+            return false;
+        }
+    }
 
     /* 7. Deallocate all resources given */
     // TODO: implement
-    return false;
+    // deallocate all
+    deallocate_all(pool);
+    // return
+    return true;
 }
