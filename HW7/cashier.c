@@ -28,6 +28,33 @@
 // Make sure no memory leak on error.
 struct cashier *cashier_init(struct cache_config config) {
   // YOUR CODE HERE
+  if (config.line_size == 0 || config.lines == 0 || config.address_bits == 0) {
+    return NULL;
+  }
+  struct cashier *cache = malloc(sizeof(struct cashier));
+  if (cache == NULL) {
+    return NULL;
+  }
+  cache->config = config;
+  cache->size = config.line_size * config.lines;
+  cache->tag_bits = config.address_bits - (config.ways + config.line_size);
+  cache->tag_mask = (1 << cache->tag_bits) - 1;
+  cache->index_bits = config.address_bits - config.line_size;
+  cache->index_mask = (1 << cache->index_bits) - 1;
+  cache->offset_bits = config.line_size;
+  cache->offset_mask = (1 << cache->offset_bits) - 1;
+  cache->lines = malloc(sizeof(struct cache_line) * config.lines);
+  if (cache->lines == NULL) {
+    free(cache);
+    return NULL;
+  }
+  cache->lines->data = malloc(sizeof(uint8_t) * config.line_size);
+  if (cache->lines->data == NULL) {
+    free(cache->lines);
+    free(cache);
+    return NULL;
+  }
+  return cache;
 }
 
 
@@ -39,6 +66,16 @@ struct cashier *cashier_init(struct cache_config config) {
 // Make sure to eliminate possibility of memory leak.
 void cashier_release(struct cashier *cache) {
   // YOUR CODE HERE
+  if (cache == NULL) {
+    return;
+  }
+  for (uint64_t i = 0; i < cache->config.lines; i++) {
+    if (cache->lines[i].valid) {
+      free(cache->lines[i].data);
+    }
+  }
+  free(cache->lines);
+  free(cache);
 }
 
 
@@ -54,6 +91,20 @@ void cashier_release(struct cashier *cache) {
 // Placing the cache line at a previously invalidated slot is not considered as an eviction.
 bool cashier_read(struct cashier *cache, uint64_t addr, uint8_t *byte) {
   // YOUR CODE HERE
+  if (cache == NULL) {
+    return false;
+  }
+  uint64_t tag = addr >> (cache->index_bits + cache->offset_bits);
+  uint64_t index = (addr >> cache->offset_bits) & cache->index_mask;
+  uint64_t offset = addr & cache->offset_mask;
+  for (uint64_t i = 0; i < cache->config.ways; i++) {
+    if (cache->lines[index * cache->config.ways + i].valid &&
+        cache->lines[index * cache->config.ways + i].tag == tag) {
+      *byte = cache->lines[index * cache->config.ways + i].data[offset];
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -70,4 +121,20 @@ bool cashier_read(struct cashier *cache, uint64_t addr, uint8_t *byte) {
 // Write-back is expected rather than write-through.
 bool cashier_write(struct cashier *cache, uint64_t addr, uint8_t byte) {
   // YOUR CODE HERE
+  // avoid singal sigsegv
+  if (cache == NULL) {
+    return false;
+  }
+  uint64_t tag = addr >> (cache->index_bits + cache->offset_bits);
+  uint64_t index = (addr >> cache->offset_bits) & cache->index_mask;
+  uint64_t offset = addr & cache->offset_mask;
+  for (uint64_t i = 0; i < cache->config.ways; i++) {
+    if (cache->lines[index * cache->config.ways + i].valid &&
+        cache->lines[index * cache->config.ways + i].tag == tag) {
+      cache->lines[index * cache->config.ways + i].data[offset] = byte;
+      cache->lines[index * cache->config.ways + i].dirty = true;
+      return true;
+    }
+  }
+  return false;
 }
