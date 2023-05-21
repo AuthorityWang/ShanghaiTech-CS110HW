@@ -7,9 +7,11 @@
 // get current timestamp: monotonic increasing positive integer value
 uint64_t get_timestamp(void);
 
-// read a byte from the data memory
+// read a byte from the data memory.
+// **CAVEAT**: do not directly dereference `addr`, you will get a `SIGSEG`.
 uint8_t mem_read(uint64_t addr);
 // write a byte into the data memory
+// **CAVEAT**: do not directly dereference `addr`, you will get a `SIGSEG`.
 void mem_write(uint64_t addr, uint8_t byte);
 
 // Configuration of the cache
@@ -20,20 +22,20 @@ struct cache_config {
   uint64_t line_size;
   // number of lines in the cache: guaranteed to be power of 2
   uint64_t lines;
-  // N-way associative cache
+  // N-way associative cache: guaranteed to be power of 2
   uint64_t ways;
 };
 
 // Cache line data structure
 struct cache_line {
-  // the valid bit and dirty bit
+  // the valid bit and dirty bit, initialized to 0
   bool valid, dirty;
-  // tag bits of this cache line, initialize to
+  // tag bits of this cache line, initialized to 0
   uint64_t tag;
   // last access timestamp
   // update to `get_timestamp()` on access, initialized to 0
   uint64_t last_access;
-  // the data bytes in this cache line
+  // the data bytes in this cache line, initialized to 0
   uint8_t *data;
 };
 
@@ -47,6 +49,7 @@ void before_eviction(uint64_t set_index, struct cache_line *victim);
 // - load entire cache line from data memory on miss
 // - write-back dirty cache line on eviction
 //
+// **NOTE** we DO NOT compare the struct member values with the values in our reference solution
 struct cashier {
   // cache simulator configuration
   struct cache_config config;
@@ -60,10 +63,8 @@ struct cashier {
   // number of bits in offset segment; bit mask for extracting the offset bits.
   uint64_t offset_bits, offset_mask;
 
-  // the cache lines in this
-  //
-  // for (i,j) in [0,sets-1] x [0,associative-1]
-  // the j-th slot in i-th set is `data[i * slots_per_way + j]`
+  // all the cache lines in this LRU cache,
+  // you may use arbitrary memory layout to store them.
   struct cache_line *lines;
 };
 
@@ -74,8 +75,10 @@ struct cashier *cashier_init(struct cache_config config);
 // also writeback dirty lines
 //
 // The order in which lines are evicted is:
-// set0-slot0, set0-slot1, set0-slotN,
-// set1-slot0, set1-slot1, set1-slotN,
+// set0-slot0, set1-slot0, set2-slot0, (the 0th way)
+// set0-slot1, set1-slot1, set2-slot1, (the 1st way)
+// set0-slot2, set1-slot2, set2-slot2, (the 2nd way)
+//
 // and so on.
 void cashier_release(struct cashier *cache);
 // read one byte at a specific address. return hit=true/miss=false
